@@ -2,6 +2,7 @@ var path = require("path");
 var express = require("express");
 var http = require("http");
 var socketIO = require("socket.io");
+var { generateMessage } = require("./utils/message");
 var publicPath = path.join(__dirname, "../public");
 var port = process.env.PORT || 3000;
 var app = express();
@@ -18,18 +19,15 @@ server.listen(port, function () {
 
 io.on("connection", function (socket) {
   console.log("new user connected");
-  socket.emit("newMessage", {
-    from: "letCode",
-    text: "hi baby",
-    createAt: new Date().getTime(),
-  });
-
-  socket.on("createMessage", function (message) {
+  socket.emit("newMessage", generateMessage("server", "hi client"));
+  socket.broadcast.emit(
+    "newMessage",
+    generateMessage("Admin server", "new user joined")
+  );
+  socket.on("createMessage", function (message, callback) {
     console.log(message);
-    socket.broadcast.emit("newMessage", {
-      from: message.from,
-      text: message.text,
-    });
+    io.emit("newMessage", generateMessage(message.from, message.text));
+    callback("the message has been  sent");
   });
 
   socket.on("disconnect", function () {
